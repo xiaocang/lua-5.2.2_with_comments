@@ -200,7 +200,10 @@ static void f_luaopen (lua_State *L, void *ud) {
 ** any memory (to avoid errors)
 */
 static void preinit_state (lua_State *L, global_State *g) {
+  // L->l_g
   G(L) = g;
+
+  // 初始化
   L->stack = NULL;
   L->ci = NULL;
   L->stacksize = 0;
@@ -263,16 +266,27 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   int i;
   lua_State *L;
   global_State *g;
+
+  // 包含线程状态和全局状态的数据结构
   LG *l = cast(LG *, (*f)(ud, NULL, LUA_TTHREAD, sizeof(LG)));
   if (l == NULL) return NULL;
   L = &l->l.l;
   g = &l->g;
+
+  // 初始化线程和全局状态??
+  // next, tt, marked 都是 CommonHeader 的一部分
   L->next = NULL;
   L->tt = LUA_TTHREAD;
+  // TODO: 还不懂这个字段意思
   g->currentwhite = bit2mask(WHITE0BIT, FIXEDBIT);
   L->marked = luaC_white(g);
+
+  // GC 的运行类型(kind)
   g->gckind = KGC_NORMAL;
+  // 线程级别状态的初始化
   preinit_state(L, g);
+
+  // 全局级别状态初始化
   g->frealloc = f;
   g->ud = ud;
   g->mainthread = L;
@@ -281,9 +295,12 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   g->uvhead.u.l.next = &g->uvhead;
   g->gcrunning = 0;  /* no GC while building state */
   g->GCestimate = 0;
+
+  // strings 的哈希表结构
   g->strt.size = 0;
   g->strt.nuse = 0;
   g->strt.hash = NULL;
+
   setnilvalue(&g->l_registry);
   luaZ_initbuffer(L, &g->buff);
   g->panic = NULL;
@@ -300,7 +317,11 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   g->gcpause = LUAI_GCPAUSE;
   g->gcmajorinc = LUAI_GCMAJOR;
   g->gcstepmul = LUAI_GCMUL;
+
+  // 基础类型的元表
   for (i=0; i < LUA_NUMTAGS; i++) g->mt[i] = NULL;
+
+  // 判断 lua 是否??安全
   if (luaD_rawrunprotected(L, f_luaopen, NULL) != LUA_OK) {
     /* memory allocation error: free partial state */
     close_state(L);

@@ -1,0 +1,8 @@
+*.o
+cscope.*
+compile_commands.json
+*.swp
+*.swo
+*.a
+lua-5.2.2/src/lua
+lua-5.2.2/src/luac
