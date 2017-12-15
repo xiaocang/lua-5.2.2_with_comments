@@ -6,3 +6,4 @@ compile_commands.json
 *.a
 lua-5.2.2/src/lua
 lua-5.2.2/src/luac
+.ycm_extra_conf.py
