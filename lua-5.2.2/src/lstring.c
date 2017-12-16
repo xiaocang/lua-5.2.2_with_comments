@@ -42,12 +42,20 @@ int luaS_eqlngstr (TString *a, TString *b) {
 /*
 ** equality for strings
 */
+// lua 的字符串对比
+// 区分长短类型两种情况
+// 短字符串由于已经内部化，比较内存地址即可
+// 长字符串则需要逐字符串对比
 int luaS_eqstr (TString *a, TString *b) {
   return (a->tsv.tt == b->tsv.tt) &&
          (a->tsv.tt == LUA_TSHRSTR ? eqshrstr(a, b) : luaS_eqlngstr(a, b));
 }
 
 
+// 在 lua5.2.0 时，没有引入 seed 而只是对长字符串部分求 hash，
+// 导致可能出现的 hash dos
+// 在之后的版本中则加入了 seed 在求hash时使用，
+// 防止 hash 碰撞
 unsigned int luaS_hash (const char *str, size_t l, unsigned int seed) {
   unsigned int h = seed ^ cast(unsigned int, l);
   size_t l1;
@@ -61,6 +69,7 @@ unsigned int luaS_hash (const char *str, size_t l, unsigned int seed) {
 /*
 ** resizes the string table
 */
+// 当散列发生碰撞时，则增大可用内存
 void luaS_resize (lua_State *L, int newsize) {
   int i;
   stringtable *tb = &G(L)->strt;
@@ -106,6 +115,8 @@ static TString *createstrobj (lua_State *L, const char *str, size_t l,
   ts->tsv.len = l;
   ts->tsv.hash = h;
   ts->tsv.extra = 0;
+  // 在字符串的末尾加入 \0 字符
+  // 和 c 语言无缝衔接，又不违背 lua 的 TString 的数据结构
   memcpy(ts+1, str, l*sizeof(char));
   ((char *)(ts+1))[l] = '\0';  /* ending 0 */
   return ts;
@@ -132,6 +143,8 @@ static TString *newshrstr (lua_State *L, const char *str, size_t l,
 /*
 ** checks whether short string exists and reuses it or creates a new one
 */
+// 短字符串的内部化
+// 开散列实现
 static TString *internshrstr (lua_State *L, const char *str, size_t l) {
   GCObject *o;
   global_State *g = G(L);
@@ -143,6 +156,9 @@ static TString *internshrstr (lua_State *L, const char *str, size_t l) {
     if (h == ts->tsv.hash &&
         l == ts->tsv.len &&
         (memcmp(str, getstr(ts), l * sizeof(char)) == 0)) {
+      // 判断字符串是否已经 "死" 掉了，
+      // 即没有被引用，但是没有被 gc 掉的字符串，
+      // 可以让他 "复活" 来重用这段内存
       if (isdead(G(L), o))  /* string is dead (but was not collected yet)? */
         changewhite(o);  /* resurrect it */
       return ts;

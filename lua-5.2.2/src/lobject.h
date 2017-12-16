@@ -53,6 +53,8 @@
 
 
 /* Variant tags for strings */
+// lua 的字符串分为两种：长字符串和短字符串
+// ?? 其区别在于高四位为 0 还是 1
 #define LUA_TSHRSTR	(LUA_TSTRING | (0 << 4))  /* short strings */
 #define LUA_TLNGSTR	(LUA_TSTRING | (1 << 4))  /* long strings */
 
@@ -407,10 +409,15 @@ typedef TValue *StkId;  /* index to stack elements */
 /*
 ** Header for string value; string bytes follow the end of this structure
 */
+// 字符串一旦创建就不可改写
+// 如果没有被任何地方引用就可以回收他
 typedef union TString {
   L_Umaxalign dummy;  /* ensures maximum alignment for strings */
   struct {
     CommonHeader;
+    // extra 标记位
+    // 对于短字符串用于标记是否为保留关键字
+    // 对于长字符串用于惰性hash求值
     lu_byte extra;  /* reserved words for short strings; "has hash" for longs */
     unsigned int hash;
     size_t len;  /* number of characters in string */
@@ -419,6 +426,8 @@ typedef union TString {
 
 
 /* get the actual string (array of bytes) from a TString */
+// lua的字符串内容直接跟在 TString 结构体后面，
+// 可以直接访问
 #define getstr(ts)	cast(const char *, (ts) + 1)
 
 /* get the actual string (array of bytes) from a Lua value */
@@ -428,6 +437,9 @@ typedef union TString {
 /*
 ** Header for userdata; memory area follows the end of this structure
 */
+// UserData 在 lua 中与 TString 的区别在于
+// UserData 中的数据不会被内部化，
+// 在字符串结尾不需要追加 \0 字符
 typedef union Udata {
   L_Umaxalign dummy;  /* ensures maximum alignment for `local' udata */
   struct {

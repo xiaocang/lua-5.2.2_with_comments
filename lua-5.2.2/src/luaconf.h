@@ -229,6 +229,10 @@
 ** or tags for metamethods, as these strings must be internalized;
 ** #("function") = 8, #("__newindex") = 10.)
 */
+// 界定长短字符串的宏
+// 最短为 10, 因为元方法名和保留字必须是断字符串
+// __newindex 的长度为 10
+// function 的长度为 8
 #define LUAI_MAXSHORTLEN        40
 
 

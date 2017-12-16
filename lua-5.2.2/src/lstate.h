@@ -56,6 +56,9 @@ struct lua_longjmp;  /* defined in ldo.c */
 #define KGC_GEN		2	/* generational collection */
 
 
+// 短字符串在lua state 中只存在一份
+// 长字符串则独立存放
+// 在 lua5.2 前，字符串是不分长短一律内部化后放在字符串表中
 typedef struct stringtable {
   GCObject **hash;
   lu_int32 nuse;  /* number of elements */

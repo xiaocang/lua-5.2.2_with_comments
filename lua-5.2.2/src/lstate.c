@@ -88,6 +88,9 @@ typedef struct LG {
 
 static unsigned int makeseed (lua_State *L) {
   char buff[4 * sizeof(size_t)];
+  // 这里的 luai_makeseed 函数是用系统当前时间做随机因子
+  // 如果需要在每次运行时结果都严格一致，
+  // 则需要自己定义 luai_makeseed 函数
   unsigned int h = luai_makeseed();
   int p = 0;
   addbuff(buff, p, L);  /* heap variable */
