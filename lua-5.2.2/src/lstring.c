@@ -64,6 +64,7 @@ unsigned int luaS_hash (const char *str, size_t l, unsigned int seed) {
 void luaS_resize (lua_State *L, int newsize) {
   int i;
   stringtable *tb = &G(L)->strt;
+  // traversing: 遍历
   /* cannot resize while GC is traversing strings */
   luaC_runtilstate(L, ~bitmask(GCSsweepstring));
   if (newsize > tb->size) {
@@ -84,6 +85,7 @@ void luaS_resize (lua_State *L, int newsize) {
     }
   }
   if (newsize < tb->size) {
+    // shrink: 收缩
     /* shrinking slice must be empty */
     lua_assert(tb->hash[newsize] == NULL && tb->hash[tb->size - 1] == NULL);
     luaM_reallocvector(L, tb->hash, tb->size, newsize, GCObject *);

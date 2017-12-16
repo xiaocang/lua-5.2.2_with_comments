@@ -183,10 +183,15 @@ static void init_registry (lua_State *L, global_State *g) {
 static void f_luaopen (lua_State *L, void *ud) {
   global_State *g = G(L);
   UNUSED(ud);
+  // 初始化主线程的数据栈(区别于其他线程的lua_newthread)
   stack_init(L, L);  /* init stack */
+  // 注册表初始化: lua 表结构有关
   init_registry(L, g);
+  // 字符串初始化
   luaS_resize(L, MINSTRTABSIZE);  /* initial size of string table */
+  // 初始化 lua 元表: __index, __gc, __call, __concat 等
   luaT_init(L);
+  // 初始化词法用的 token 串
   luaX_init(L);
   /* pre-create memory-error message */
   g->memerrmsg = luaS_newliteral(L, MEMERRMSG);
@@ -268,6 +273,7 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   global_State *g;
 
   // 包含线程状态和全局状态的数据结构
+  // ??LG 结构中，主线程的 l 须在 G 前面，否则无法正确释放内存
   LG *l = cast(LG *, (*f)(ud, NULL, LUA_TTHREAD, sizeof(LG)));
   if (l == NULL) return NULL;
   L = &l->l.l;
@@ -290,6 +296,7 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   g->frealloc = f;
   g->ud = ud;
   g->mainthread = L;
+  // ??和字符串哈希算法有关
   g->seed = makeseed(L);
   g->uvhead.u.l.prev = &g->uvhead;
   g->uvhead.u.l.next = &g->uvhead;
@@ -302,9 +309,14 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   g->strt.hash = NULL;
 
   setnilvalue(&g->l_registry);
+
+  // 字符串处理所需要的临时空间，总是指向这里
   luaZ_initbuffer(L, &g->buff);
+
   g->panic = NULL;
+  // 检测多重链入虚拟机的关键: luaL_checkversion
   g->version = lua_version(NULL);
+
   g->gcstate = GCSpause;
   g->allgc = NULL;
   g->finobj = NULL;
@@ -322,6 +334,8 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   for (i=0; i < LUA_NUMTAGS; i++) g->mt[i] = NULL;
 
   // 判断 lua 是否(??)安全
+  // lua 在初始化时，内存管理器都是从外部传入的，
+  // 为了保证lua虚拟机的健壮性，需要检查所有分配的结果
   if (luaD_rawrunprotected(L, f_luaopen, NULL) != LUA_OK) {
     /* memory allocation error: free partial state */
     close_state(L);
