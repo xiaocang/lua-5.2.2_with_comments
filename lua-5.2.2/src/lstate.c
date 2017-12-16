@@ -321,7 +321,7 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   // 基础类型的元表
   for (i=0; i < LUA_NUMTAGS; i++) g->mt[i] = NULL;
 
-  // 判断 lua 是否??安全
+  // 判断 lua 是否(??)安全
   if (luaD_rawrunprotected(L, f_luaopen, NULL) != LUA_OK) {
     /* memory allocation error: free partial state */
     close_state(L);

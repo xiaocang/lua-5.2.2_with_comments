@@ -21,6 +21,10 @@
 ** +1 avoids warnings of "comparison has constant result";
 ** cast to 'void' avoids warnings of "value unused".
 */
+// 管理不同类别的内存：数组，可变长数组，单个对象
+// ??? 使用宏来实现的原因是因为在调用时省去常量参数传递的问题
+// 核心API: luaM_realloc_() 申请固定大小内存
+// 核心API: luaM_growaux_() 申请可变长数组
 #define luaM_reallocv(L,b,on,n,e) \
   (cast(void, \
      (cast(size_t, (n)+1) > MAX_SIZET/(e)) ? (luaM_toobig(L), 0) : 0), \

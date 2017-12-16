@@ -37,16 +37,19 @@
 ** frealloc returns NULL if it cannot create or reallocate the area
 ** (any reallocation to an equal or smaller size cannot fail!)
 */
-
-
+/*
+ * frealloc 可以申请/改变大小/释放指针的内存
+ */
 
 #define MINSIZEARRAY	4
 
 
+// 当需要扩大数组时，将内存的大小翻倍
 void *luaM_growaux_ (lua_State *L, void *block, int *size, size_t size_elems,
                      int limit, const char *what) {
   void *newblock;
   int newsize;
+  // 无法将内存大小翻倍
   if (*size >= limit/2) {  /* cannot double it? */
     if (*size >= limit)  /* cannot grow even a little? */
       luaG_runerror(L, "too many %s (limit is %d)", what, limit);
@@ -72,6 +75,9 @@ l_noret luaM_toobig (lua_State *L) {
 /*
 ** generic allocation routine.
 */
+// block: 要重新申请内存的数据结构
+// osize: old size
+// nsize: new size
 void *luaM_realloc_ (lua_State *L, void *block, size_t osize, size_t nsize) {
   void *newblock;
   global_State *g = G(L);
@@ -82,17 +88,23 @@ void *luaM_realloc_ (lua_State *L, void *block, size_t osize, size_t nsize) {
     luaC_fullgc(L, 1);  /* force a GC whenever possible */
 #endif
   newblock = (*g->frealloc)(g->ud, block, osize, nsize);
+  // 申请失败
   if (newblock == NULL && nsize > 0) {
     api_check(L, nsize > realosize,
                  "realloc cannot fail when shrinking a block");
+    // gc 处理内存
     if (g->gcrunning) {
+      // 内存不够用时，使用 gc 释放部分内存
       luaC_fullgc(L, 1);  /* try to free some memory... */
+      // g->frealloc 重新申请内存的handler
       newblock = (*g->frealloc)(g->ud, block, osize, nsize);  /* try again */
     }
+    // gc 后还是申请失败，抛错
     if (newblock == NULL)
       luaD_throw(L, LUA_ERRMEM);
   }
   lua_assert((nsize == 0) == (newblock == NULL));
+  // 内部感知内存大小
   g->GCdebt = (g->GCdebt + nsize) - realosize;
   return newblock;
 }

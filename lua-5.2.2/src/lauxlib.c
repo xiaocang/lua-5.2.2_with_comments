@@ -916,17 +916,22 @@ LUALIB_API const char *luaL_gsub (lua_State *L, const char *s, const char *p,
 }
 
 
+// lua 使用的申请内存的函数
 static void *l_alloc (void *ud, void *ptr, size_t osize, size_t nsize) {
   (void)ud; (void)osize;  /* not used */
+  // 如果内存申请大小为0，则释放指针对应的内存
   if (nsize == 0) {
     free(ptr);
     return NULL;
   }
+  // 否则使用 realloc 函数来申请内存
+  // 来自 <stdlib.h>
   else
     return realloc(ptr, nsize);
 }
 
 
+// 异常处理
 static int panic (lua_State *L) {
   luai_writestringerror("PANIC: unprotected error in call to Lua API (%s)\n",
                    lua_tostring(L, -1));
@@ -935,7 +940,9 @@ static int panic (lua_State *L) {
 
 
 LUALIB_API lua_State *luaL_newstate (void) {
+  // 使用lua自己封装的内存申请函数
   lua_State *L = lua_newstate(l_alloc, NULL);
+  // 注册自己的 lua 异常处理函数 &panic
   if (L) lua_atpanic(L, &panic);
   return L;
 }

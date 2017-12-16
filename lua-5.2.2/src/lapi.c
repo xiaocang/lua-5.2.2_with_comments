@@ -126,10 +126,16 @@ LUA_API void lua_xmove (lua_State *from, lua_State *to, int n) {
 
 LUA_API lua_CFunction lua_atpanic (lua_State *L, lua_CFunction panicf) {
   lua_CFunction old;
+  // 在操作 G 变量前后，使用锁
   lua_lock(L);
+
+  // 注册异常处理函数
   old = G(L)->panic;
   G(L)->panic = panicf;
+
   lua_unlock(L);
+
+  // 返回之前的异常处理函数
   return old;
 }
 
