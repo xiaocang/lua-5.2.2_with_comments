@@ -213,6 +213,7 @@ GCObject *luaC_newobj (lua_State *L, int tt, size_t sz, GCObject **list,
                        int offset) {
   global_State *g = G(L);
   char *raw = cast(char *, luaM_newobject(L, novariant(tt), sz));
+  // 将 luaObject 转换为 gco
   GCObject *o = obj2gco(raw + offset);
   if (list == NULL)
     list = &g->allgc;  /* standard list for collectable objects */
@@ -1053,7 +1054,7 @@ static lu_mem singlestep (lua_State *L) {
         g->gcstate = GCSatomic;  /* finish mark phase */
         g->GCestimate = g->GCmemtrav;  /* save what was counted */;
         work = atomic(L);  /* add what was traversed by 'atomic' */
-        g->GCestimate += work;  /* estimate of total memory traversed */ 
+        g->GCestimate += work;  /* estimate of total memory traversed */
         sw = entersweep(L);
         return work + sw * GCSWEEPCOST;
       }

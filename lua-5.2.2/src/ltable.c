@@ -64,6 +64,7 @@
 #define hashpointer(t,p)	hashmod(t, IntPoint(p))
 
 
+// lua 对空表的优化：所有空表都指向一个只读的节点
 #define dummynode		(&dummynode_)
 
 #define isdummy(n)		((n) == dummynode)
@@ -100,6 +101,7 @@ static Node *mainposition (const Table *t, const TValue *key) {
       return hashnum(t, nvalue(key));
     case LUA_TLNGSTR: {
       TString *s = rawtsvalue(key);
+      // 长字符串 lazy hash 实现
       if (s->tsv.extra == 0) {  /* no hash? */
         s->tsv.hash = luaS_hash(getstr(s), s->tsv.len, s->tsv.hash);
         s->tsv.extra = 1;  /* now it has its hash */
@@ -369,8 +371,10 @@ Table *luaH_new (lua_State *L) {
   Table *t = &luaC_newobj(L, LUA_TTABLE, sizeof(Table), NULL, 0)->h;
   t->metatable = NULL;
   t->flags = cast_byte(~0);
+  // 初始化数组
   t->array = NULL;
   t->sizearray = 0;
+  // 初始化哈希表
   setnodevector(L, t, 0);
   return t;
 }
@@ -402,6 +406,7 @@ static Node *getfreepos (Table *t) {
 ** put new key in its main position; otherwise (colliding node is in its main
 ** position), new key goes to an empty position.
 */
+// 创建新的 table
 TValue *luaH_newkey (lua_State *L, Table *t, const TValue *key) {
   Node *mp;
   if (ttisnil(key)) luaG_runerror(L, "table index is nil");
@@ -418,6 +423,12 @@ TValue *luaH_newkey (lua_State *L, Table *t, const TValue *key) {
     }
     lua_assert(!isdummy(n));
     othern = mainposition(t, gkey(mp));
+    /* colliding: 碰撞 */
+    // hash 碰撞检查
+    //
+    // 采用闭散列算法
+    // ??? 若两者冲突，利用 Node 结构中的 Next 域，
+    // ??? 以一个单向链表把它们链起来
     if (othern != mp) {  /* is colliding node out of its main position? */
       /* yes; move colliding node into free position */
       while (gnext(othern) != mp) othern = gnext(othern);  /* find previous */
@@ -463,6 +474,7 @@ const TValue *luaH_getint (Table *t, int key) {
 /*
 ** search function for short strings
 */
+// 短字符串优化原因: 长字符串一般是要处理的大段文本，很少有比较操作
 const TValue *luaH_getstr (Table *t, TString *key) {
   Node *n = hashstr(t, key);
   lua_assert(key->tsv.tt == LUA_TSHRSTR);

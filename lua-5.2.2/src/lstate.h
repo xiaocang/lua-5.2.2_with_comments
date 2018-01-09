@@ -186,6 +186,7 @@ struct lua_State {
 /*
 ** Union of all collectable objects
 */
+/* collectable objects: 可回收的对象 */
 union GCObject {
   GCheader gch;  /* common header */
   union TString ts;

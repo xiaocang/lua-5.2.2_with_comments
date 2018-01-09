@@ -102,6 +102,9 @@ typedef union Value Value;
 ** Tagged Values. This is the basic representation of values in Lua,
 ** an actual value plus a tag with its type.
 */
+/*
+ * 标识的值。这是lua中的值的基本实现：真实的值 + 类型标签
+ */
 
 #define TValuefields	Value value_; int tt_
 
@@ -553,6 +556,12 @@ typedef union Closure {
 /*
 ** Tables
 */
+/*
+ * 一个 lua 中的 table 结构，最多会由三块连续的内存组成:
+ * 1. 一个 Table 结构
+ * 2. 一个存放了连续整数索引的数组
+ * 3. 一块大小为2的整数次幂的哈希表
+ */
 
 typedef union TKey {
   struct {
@@ -572,12 +581,15 @@ typedef struct Node {
 typedef struct Table {
   CommonHeader;
   lu_byte flags;  /* 1<<p means tagmethod(p) is not present */
+  // 哈希表的长度(幂次)
   lu_byte lsizenode;  /* log2 of size of `node' array */
   struct Table *metatable;
+  // lua 的数组部分
   TValue *array;  /* array part */
   Node *node;
   Node *lastfree;  /* any free position is before this position */
   GCObject *gclist;
+  // lua 的数组长度
   int sizearray;  /* size of `array' array */
 } Table;
 
