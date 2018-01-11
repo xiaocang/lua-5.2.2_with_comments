@@ -185,6 +185,7 @@ TString *luaS_newlstr (lua_State *L, const char *str, size_t l) {
 /*
 ** new zero-terminated string
 */
+// ??? 新建一个非0结尾的字符
 TString *luaS_new (lua_State *L, const char *str) {
   return luaS_newlstr(L, str, strlen(str));
 }

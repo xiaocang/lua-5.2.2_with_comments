@@ -152,6 +152,13 @@ static int findindex (lua_State *L, Table *t, StkId key) {
   else {
     Node *n = mainposition(t, key);
     for (;;) {  /* check whether `key' is somewhere in the chain */
+      // 在使用 next 进行迭代操作时，可以对正在迭代的表进行删除key操作，
+      // 删除key之后，如果进行了gc，这个key在表中就被标死，
+      // 这里会将被标死的key也查找出来，不影响整个迭代过程。
+      //
+      // 需要注意的是，在迭代表过程中，不能对表进行插入操作，
+      // 不然整个迭代过程可能无法遍历到新key，如果插入操作触发了 rehash，
+      // 那么就会影响整个迭代过程，可能出现重复遍历的问题。
       /* key may be dead already, but it is ok to use it in `next' */
       if (luaV_rawequalobj(gkey(n), key) ||
             (ttisdeadkey(gkey(n)) && iscollectable(key) &&
@@ -168,7 +175,11 @@ static int findindex (lua_State *L, Table *t, StkId key) {
 }
 
 
+// lua 中 next 的实现
+// 首先查询 Table 中的数组部分，
+// 再对哈希表进行查询
 int luaH_next (lua_State *L, Table *t, StkId key) {
+  // lua 中的 next 接受两个参数，假如 key 是空值，则从数组或者哈希表中取出第一个元素。
   int i = findindex(L, t, key);  /* find original element */
   for (i++; i < t->sizearray; i++) {  /* try first array part */
     if (!ttisnil(&t->array[i])) {  /* a non-nil value? */
@@ -546,6 +557,7 @@ static int unbound_search (Table *t, unsigned int j) {
   j++;
   /* find `i' and `j' such that i is present and j is not */
   while (!ttisnil(luaH_getint(t, j))) {
+    // 这里依然使用二分法确定哈希部分的长度
     i = j;
     j *= 2;
     if (j > cast(unsigned int, MAX_INT)) {  /* overflow? */
@@ -569,8 +581,12 @@ static int unbound_search (Table *t, unsigned int j) {
 ** Try to find a boundary in table `t'. A `boundary' is an integer index
 ** such that t[i] is non-nil and t[i+1] is nil (and 0 if t[1] is nil).
 */
+// 获取lua表的长度。
+// 长度定义：t[n] 为非空，而 t[n + 1] 为空
+// 在数组部分为空或者填满的情况下，会将表中的哈希部分长度也算进来。
 int luaH_getn (Table *t) {
   unsigned int j = t->sizearray;
+  // 数组的长度使用二分法快速确定
   if (j > 0 && ttisnil(&t->array[j - 1])) {
     /* there is a boundary in the array part: (binary) search for it */
     unsigned int i = 0;

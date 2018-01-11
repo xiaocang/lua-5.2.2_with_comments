@@ -229,6 +229,9 @@ union luai_Cast { double l_d; LUA_INT32 l_p[2]; };
     volatile union luai_Cast u; u.l_d = (n) + 6755399441055744.0; \
     (i) = (t)u.l_p[LUA_IEEEENDIANLOC]; }
 
+// 使用一个联合体来取出浮点数所占内存中的数据.
+// 优点：性能高
+// 缺点：不够通用，不符合标准
 #define luai_hashnum(i,n)  \
   { volatile union luai_Cast u; u.l_d = (n) + 1.0;  /* avoid -0 */ \
     (i) = u.l_p[0]; (i) += u.l_p[1]; }  /* add double bits for his hash */
@@ -281,6 +284,7 @@ union luai_Cast { double l_d; LUA_INT32 l_p[2]; };
 #include <float.h>
 #include <math.h>
 
+// 更为通用和符合标准的hash算法
 #define luai_hashnum(i,n) { int e;  \
   n = l_mathop(frexp)(n, &e) * (lua_Number)(INT_MAX - DBL_MAX_EXP);  \
   lua_number2int(i, n); i += e; }

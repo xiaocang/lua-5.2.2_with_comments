@@ -147,7 +147,9 @@ typedef struct global_State {
   struct lua_State *mainthread;
   const lua_Number *version;  /* pointer to version number */
   TString *memerrmsg;  /* memory-error message */
+  // 元方法的表
   TString *tmname[TM_N];  /* array with tag-method names */
+  // lua 基础类型的表
   struct Table *mt[LUA_NUMTAGS];  /* metatables for basic types */
 } global_State;
 

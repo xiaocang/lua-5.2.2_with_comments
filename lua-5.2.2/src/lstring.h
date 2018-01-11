@@ -19,6 +19,8 @@
 #define luaS_newliteral(L, s)	(luaS_newlstr(L, "" s, \
                                  (sizeof(s)/sizeof(char))-1))
 
+// 使该对象不被回收
+// 关键字: FIXEDBIT
 #define luaS_fix(s)	l_setbit((s)->tsv.marked, FIXEDBIT)
 
 

@@ -15,6 +15,7 @@
 #define gval(n)		(&(n)->i_val)
 #define gnext(n)	((n)->i_key.nk.next)
 
+// 使用 flags 位来对元方法查询来进行优化
 #define invalidateTMcache(t)	((t)->flags = 0)
 
 

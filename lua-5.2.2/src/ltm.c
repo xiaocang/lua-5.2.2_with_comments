@@ -19,6 +19,7 @@
 #include "ltm.h"
 
 
+// 预定义了 lua 中的类型名
 static const char udatatypename[] = "userdata";
 
 LUAI_DDEF const char *const luaT_typenames_[LUA_TOTALTAGS] = {
@@ -30,6 +31,7 @@ LUAI_DDEF const char *const luaT_typenames_[LUA_TOTALTAGS] = {
 
 
 void luaT_init (lua_State *L) {
+  // 初始化元方法
   static const char *const luaT_eventname[] = {  /* ORDER TM */
     "__index", "__newindex",
     "__gc", "__mode", "__len", "__eq",
@@ -60,6 +62,7 @@ const TValue *luaT_gettm (Table *events, TMS event, TString *ename) {
 }
 
 
+// 查询元方法操作
 const TValue *luaT_gettmbyobj (lua_State *L, const TValue *o, TMS event) {
   Table *mt;
   switch (ttypenv(o)) {
@@ -72,6 +75,7 @@ const TValue *luaT_gettmbyobj (lua_State *L, const TValue *o, TMS event) {
     default:
       mt = G(L)->mt[ttypenv(o)];
   }
+  // 元方法的优化查询
   return (mt ? luaH_getstr(mt, G(L)->tmname[event]) : luaO_nilobject);
 }
 
