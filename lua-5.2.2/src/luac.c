@@ -118,6 +118,7 @@ static int doargs(int argc, char* argv[])
 
 static const char* reader(lua_State *L, void *ud, size_t *size)
 {
+ // magic macro
  UNUSED(L);
  if ((*(int*)ud)--)
  {

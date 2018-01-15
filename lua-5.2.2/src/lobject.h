@@ -194,6 +194,7 @@ typedef struct lua_TValue TValue;
 
 #define setnilvalue(obj) settt_(obj, LUA_TNIL)
 
+// LUA_TLCF: light c function
 #define setfvalue(obj,x) \
   { TValue *io=(obj); val_(io).f=(x); settt_(io, LUA_TLCF); }
 
@@ -479,14 +480,20 @@ typedef struct LocVar {
 /*
 ** Function Prototypes
 */
+// 函数原型
 typedef struct Proto {
   CommonHeader;
   TValue *k;  /* constants used by the function */
+  // ??? 虚拟机操作码
   Instruction *code;
+  // 函数嵌套
   struct Proto **p;  /* functions defined inside the function */
   int *lineinfo;  /* map from opcodes to source lines (debug information) */
   LocVar *locvars;  /* information about local variables (debug information) */
   Upvaldesc *upvalues;  /* upvalue information */
+  // Lua5.2 对闭包的优化：
+  // 当使用函数原型生成闭包的时候,
+  // 会检查 upvalue 是否一致，如果一致则复用 cache 中的闭包。
   union Closure *cache;  /* last created closure with this prototype */
   TString  *source;  /* used for debug information */
   int sizeupvalues;  /* size of 'upvalues' */
@@ -513,6 +520,8 @@ typedef struct UpVal {
   TValue *v;  /* points to stack or to its own value */
   union {
     TValue value;  /* the value (when closed) */
+    // 当引用的变量还在数据栈上的时候，这个upvalue被称作开放的
+    // lua 中使用一个双向链表来遍历 openupval
     struct {  /* double linked list (when open) */
       struct UpVal *prev;
       struct UpVal *next;
@@ -535,6 +544,8 @@ typedef struct CClosure {
 } CClosure;
 
 
+// Lua 的闭包
+// Proto 和 UpVal 的组合
 typedef struct LClosure {
   ClosureHeader;
   struct Proto *p;
@@ -542,6 +553,7 @@ typedef struct LClosure {
 } LClosure;
 
 
+// 包含 Lua 的 Closure 和 C 的 Closure
 typedef union Closure {
   CClosure c;
   LClosure l;

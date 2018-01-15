@@ -558,11 +558,15 @@ LUA_API const char *lua_pushfstring (lua_State *L, const char *fmt, ...) {
 }
 
 
+// Lua C 轻量函数，即没有 upval 的 C闭包。
+// 不需要 Closure 结构体，也不需要gc管理。
 LUA_API void lua_pushcclosure (lua_State *L, lua_CFunction fn, int n) {
   lua_lock(L);
+  // 当没有 upval 时，即为lua c轻量函数
   if (n == 0) {
     setfvalue(L->top, fn);
   }
+  // 创建 C 闭包
   else {
     Closure *cl;
     api_checknelems(L, n);

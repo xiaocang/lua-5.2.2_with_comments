@@ -20,6 +20,7 @@
 
 
 
+// c闭包，直接将c的upval放入结构体中即可
 Closure *luaF_newCclosure (lua_State *L, int n) {
   Closure *c = &luaC_newobj(L, LUA_TCCL, sizeCclosure(n), NULL, 0)->cl;
   c->c.nupvalues = cast_byte(n);
@@ -27,6 +28,10 @@ Closure *luaF_newCclosure (lua_State *L, int n) {
 }
 
 
+// 只是绑定了 Proto，却未对 upval 初始化
+// Lua 的闭包有两种构建方式：
+// 1. 在 lua 虚拟机运行的过程中动态构造，这种可以通过`luaF_findupval` 将数据栈上的值转化为 upval
+// 2. 加载一段lua源码，lua会将这段源码转换成一个闭包，再通过 luaF_newupval 初始化 upval
 Closure *luaF_newLclosure (lua_State *L, int n) {
   Closure *c = &luaC_newobj(L, LUA_TLCL, sizeLclosure(n), NULL, 0)->cl;
   c->l.p = NULL;
@@ -44,6 +49,7 @@ UpVal *luaF_newupval (lua_State *L) {
 }
 
 
+// ??? StkId: 栈深度
 UpVal *luaF_findupval (lua_State *L, StkId level) {
   global_State *g = G(L);
   GCObject **pp = &L->openupval;
@@ -51,6 +57,8 @@ UpVal *luaF_findupval (lua_State *L, StkId level) {
   UpVal *uv;
   while (*pp != NULL && (p = gco2uv(*pp))->v >= level) {
     GCObject *o = obj2gco(p);
+    // ??? 判断 upval 是否开放
+    // lua_assert -> assert
     lua_assert(p->v != &p->u.value);
     lua_assert(!isold(o) || isold(obj2gco(L)));
     if (p->v == level) {  /* found a corresponding upvalue? */
@@ -86,6 +94,9 @@ void luaF_freeupval (lua_State *L, UpVal *uv) {
 }
 
 
+// * 关闭 upvalue
+// * 销毁无引用的变量
+// * 调整 upval->v 的指针
 void luaF_close (lua_State *L, StkId level) {
   UpVal *uv;
   global_State *g = G(L);
@@ -132,6 +143,8 @@ Proto *luaF_newproto (lua_State *L) {
 }
 
 
+// 释放函数原型，
+// 这里可以看出 Proto 保存了内部数据的详细大小
 void luaF_freeproto (lua_State *L, Proto *f) {
   luaM_freearray(L, f->code, f->sizecode);
   luaM_freearray(L, f->p, f->sizep);

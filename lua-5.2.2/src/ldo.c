@@ -629,6 +629,7 @@ static void checkmode (lua_State *L, const char *mode, const char *x) {
 }
 
 
+// ??? loadstring or dofile
 static void f_parser (lua_State *L, void *ud) {
   int i;
   Closure *cl;
@@ -643,6 +644,7 @@ static void f_parser (lua_State *L, void *ud) {
     cl = luaY_parser(L, p->z, &p->buff, &p->dyd, p->name, c);
   }
   lua_assert(cl->l.nupvalues == cl->l.p->sizeupvalues);
+  // upval 不源于数据栈，而是重新创建
   for (i = 0; i < cl->l.nupvalues; i++) {  /* initialize upvalues */
     UpVal *up = luaF_newupval(L);
     cl->l.upvals[i] = up;
