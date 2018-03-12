@@ -112,6 +112,7 @@ void luaE_setdebt (global_State *g, l_mem debt) {
 }
 
 
+// 扩展调用栈
 CallInfo *luaE_extendCI (lua_State *L) {
   CallInfo *ci = luaM_new(L, CallInfo);
   lua_assert(L->ci->next == NULL);
@@ -122,6 +123,7 @@ CallInfo *luaE_extendCI (lua_State *L) {
 }
 
 
+// 释放 callinfo 链表中无用的部分
 void luaE_freeCI (lua_State *L) {
   CallInfo *ci = L->ci;
   CallInfo *next = ci->next;
@@ -133,6 +135,7 @@ void luaE_freeCI (lua_State *L) {
 }
 
 
+// 栈初始化
 static void stack_init (lua_State *L1, lua_State *L) {
   int i; CallInfo *ci;
   /* initialize stack array */
@@ -143,6 +146,7 @@ static void stack_init (lua_State *L1, lua_State *L) {
   L1->top = L1->stack;
   L1->stack_last = L1->stack + L1->stacksize - EXTRA_STACK;
   /* initialize first ci */
+  // 调用栈的初始值为 C 调用
   ci = &L1->base_ci;
   ci->next = ci->previous = NULL;
   ci->callstatus = 0;
@@ -245,6 +249,9 @@ LUA_API lua_State *lua_newthread (lua_State *L) {
   lua_State *L1;
   lua_lock(L);
   luaC_checkGC(L);
+  // LX 作为内存中的线程结构，在 lua_State 的结构有
+  // LUAI_EXTRASPACE 的大小的额外信息
+  // ??? 在追求性能的环境下，可以提高访问效率和避免线程不安全
   L1 = &luaC_newobj(L, LUA_TTHREAD, sizeof(LX), NULL, offsetof(LX, l))->th;
   setthvalue(L, L->top, L1);
   api_incr_top(L);

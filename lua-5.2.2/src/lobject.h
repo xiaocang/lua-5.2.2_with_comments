@@ -94,6 +94,7 @@ typedef struct GCheader {
 typedef union Value Value;
 
 
+// lua_Number: double
 #define numfield	lua_Number n;    /* numbers */
 
 
@@ -391,6 +392,9 @@ typedef struct lua_TValue TValue;
 */
 
 
+// Lua 中的数据可以分为： 值类型 引用类型
+// 引用类型为 GCObject
+// 值类型
 union Value {
   GCObject *gc;    /* collectable objects */
   void *p;         /* light userdata */

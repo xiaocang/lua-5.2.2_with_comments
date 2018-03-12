@@ -142,12 +142,20 @@ int luaD_rawrunprotected (lua_State *L, Pfunc f, void *ud) {
 static void correctstack (lua_State *L, TValue *oldstack) {
   CallInfo *ci;
   GCObject *up;
+  // 重新计算(数据)栈顶
   L->top = (L->top - oldstack) + L->stack;
+  // 重新计算 upval 栈
   for (up = L->openupval; up != NULL; up = up->gch.next)
     gco2uv(up)->v = (gco2uv(up)->v - oldstack) + L->stack;
+  // 重新计算(函数调用)栈
   for (ci = L->ci; ci != NULL; ci = ci->previous) {
     ci->top = (ci->top - oldstack) + L->stack;
     ci->func = (ci->func - oldstack) + L->stack;
+    // Lua 调用栈的栈顶(基)
+    // > 如果当前是一个 Lua 函数，且传入的参数个数不定的时候，需要用这个位置
+    // > 和当前数据栈底的位置相减，获得不定参数的准确数量
+    //
+    // Lua 5.1 中没有 callstatus 字段，需要访问 func 引用的函数来判断
     if (isLua(ci))
       ci->u.l.base = (ci->u.l.base - oldstack) + L->stack;
   }

@@ -73,6 +73,7 @@ typedef struct CallInfo {
   StkId func;  /* function index in the stack */
   StkId	top;  /* top for this function */
   struct CallInfo *previous, *next;  /* dynamic call link */
+  // 期望的返回参数个数
   short nresults;  /* expected number of results from this function */
   lu_byte callstatus;
   ptrdiff_t extra;
@@ -82,6 +83,7 @@ typedef struct CallInfo {
       const Instruction *savedpc;
     } l;
     struct {  /* only for C functions */
+      // 协程的上下文
       int ctx;  /* context info. in case of yields */
       lua_CFunction k;  /* continuation in case of yields */
       ptrdiff_t old_errfunc;
@@ -157,6 +159,7 @@ typedef struct global_State {
 /*
 ** `per thread' state
 */
+// 每个线程拥有独立的数据栈和函数调用栈
 struct lua_State {
   CommonHeader;
   lu_byte status;
